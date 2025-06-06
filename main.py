@@ -6,64 +6,87 @@ def start(store: Store):
     Interactive menu-driven session for a Store instance.
     """
     while True:
-        print("\n   Store Menu")
-        print("   ----------")
-        print("1. List all products in store")
-        print("2. Show total amount in store")
-        print("3. Make an order")
-        print("4. Quit")
-        choice = input("Please choose a number: ")
+        display_menu()
+        choice = input("Please choose a number: ").strip()
+
         if choice == '1':
-            products = store.get_all_products()
-            if not products:
-                print("No products available.")
-            else:
-                print("------")
-                for index, item in enumerate(products, start=1):
-                    print(f"{index}. {item.show()}")
-                print("------")
+            handle_list_products(store)
         elif choice == '2':
-            total = store.get_total_quantity()
-            print(f"Total of {total} items in store")
+            handle_total_quantity(store)
         elif choice == '3':
-            products = store.get_all_products()
-            if not products:
-                print("No products available.")
-                continue
-            print("------")
-            for index, item in enumerate(products, start=1):
-                print(f"{index}. {item.show()}")
-            print("------")
-            print("When you want to finish order, enter empty text.")
-
-            shopping_list = []
-
-            while True:
-                product_number = get_int_or_exit("Which product # do you want? ")
-                if product_number is None:
-                    break
-
-                amount = get_int_or_exit("What amount do you want? ")
-                if amount is None:
-                    break
-
-                index = product_number - 1
-                if index < 0 or index >= len(products):
-                    print("⚠️  Invalid product number.")
-                    continue
-                shopping_list.append((products[index], amount))
-
-            if shopping_list:
-                try:
-                    cost = store.order(shopping_list)
-                    print(f"\nOrder cost: {cost} dollars.")
-                except ValueError as e:
-                    print(f"Error processing order: {e}")
+            handle_make_order(store)
         elif choice == '4':
             print("Exiting. Goodbye!")
             break
         else:
             print("Invalid choice. Please select 1-4.")
+
+def display_menu():
+    print("\n   Store Menu")
+    print("   ----------")
+    print("1. List all products in store")
+    print("2. Show total amount in store")
+    print("3. Make an order")
+    print("4. Quit")
+
+
+def handle_list_products(store):
+    products = store.get_all_products()
+    if not products:
+        print("No products available.")
+        return
+    print("------")
+    for index, item in enumerate(products, start=1):
+        print(f"{index}. {item.show()}")
+    print("------")
+
+
+def handle_total_quantity(store):
+    total = store.get_total_quantity()
+    print(f"Total of {total} items in store")
+
+
+def handle_make_order(store):
+    products = store.get_all_products()
+    if not products:
+        print("No products available.")
+        return
+
+    print("------")
+    for index, item in enumerate(products, start=1):
+        print(f"{index}. {item.show()}")
+    print("------")
+    print("When you want to finish order, enter empty text.")
+
+    shopping_list = build_shopping_list(products)
+
+    if shopping_list:
+        try:
+            cost = store.order(shopping_list)
+            print(f"\nOrder cost: {cost} dollars.")
+        except ValueError as e:
+            print(f"Error processing order: {e}")
+
+
+def build_shopping_list(products):
+    shopping_list = []
+
+    while True:
+        product_number = get_int_or_exit("Which product # do you want? ")
+        if product_number is None:
+            break
+
+        amount = get_int_or_exit("What amount do you want? ")
+        if amount is None:
+            break
+
+        index = product_number - 1
+        if 0 <= index < len(products):
+            shopping_list.append((products[index], amount))
+        else:
+            print("⚠️  Invalid product number.")
+
+    return shopping_list
 
 
 def get_int_or_exit(prompt: str) -> int | None:
@@ -72,13 +95,14 @@ def get_int_or_exit(prompt: str) -> int | None:
     a blank line which returns None.
     """
     while True:
-        raw = input(prompt).strip()
-        if raw == "":
+        value = input(prompt).strip()
+        if not value:
             return None
         try:
-            return int(raw)
+            return int(value)
         except ValueError:
             print("⚠️  Please enter an integer or blank to order.")
+            return None
 
 
 def main():
